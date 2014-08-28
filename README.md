@@ -1,6 +1,7 @@
 Elasticsearch Powered Magento Fulltext Search
 ================================================================================
-This is a fork of https://github.com/jreinke/magento-elasticsearch.
+This is a fork of
+[jreinke/magento-elasticsearch](https://github.com/jreinke/magento-elasticsearch).
 Unfortunatley [jreinke](https://github.com/jreinke) stoped development on this.
 
 The module is based on [Elastica](https://github.com/ruflin/Elastica) 1.3 and
