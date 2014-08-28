@@ -204,7 +204,28 @@ class Bubble_Search_Model_Resource_Engine_Elasticsearch_Client extends Elastica\
     {
         return (bool) $this->getConfig('enable_icu_folding');
     }
-
+    
+    /**
+     * minimum score
+     * 
+     * @link http://www.elasticsearch.org/guide/reference/api/search/min-score/
+     * @return float
+     */
+    public function getMinScore()
+    {
+        return (float) $this->getConfigValue('min_score', null);
+    }
+    
+    /**
+     * minimum score available
+     * 
+     * @return boolean
+     */
+    public function hasMinScore()
+    {
+        return $this->getConfigValue('min_score', null) !== null;
+    }
+    
     /**
      * Refreshes index
      *
@@ -320,6 +341,20 @@ class Bubble_Search_Model_Resource_Engine_Elasticsearch_Client extends Elastica\
                     $query->addSort($sort);
                 }
             }
+            
+            if (isset($params['min_score'])) {
+                $query->setMinScore($params['min_score']);
+            } elseif ($this->hasMinScore()) {
+                $query->setMinScore($this->getMinScore());
+            }
+            
+            $this->_getHelper()->log(
+                sprintf(
+                    'search (%s/%s): %s',
+                    $this->_index, $type, json_encode($query->toArray())
+                ),
+                Zend_Log::INFO
+            );
 
             $result = $this->getIndex($this->_index)
                 ->getType($type)
@@ -403,33 +438,54 @@ class Bubble_Search_Model_Resource_Engine_Elasticsearch_Client extends Elastica\
                     /** @var $store Mage_Core_Model_Store */
                     $locale = $helper->getLocaleCode($store);
                     $key = $helper->getAttributeFieldName($attribute, $locale);
+                    
                     $type = $this->_getAttributeType($attribute);
-                    if ($type !== 'string') {
-                        $properties[$key] = array(
-                            'type' => $type,
+                    $indexableSource = $helper->isAttributeUsingIndexableSource($attribute);
+                    $weight = max((int) $attribute->getSearchWeight(), 1);
+                    
+                    if ($indexableSource) {
+                        $property = array(
+                            'type' => 'object',
+                            'properties' => array(
+                                'value' => array(
+                                    'type' => 'string',
+                                    'boost' => $weight,
+                                ),
+                                'label' => array(
+                                    'type' => 'string',
+                                    'boost' => $weight,
+                                ),
+                            ),
                         );
-                    } else {
-                        $weight = $attribute->getSearchWeight();
-                        $properties[$key] = array(
+                        $properties[$key] = $property;
+                        
+                    } elseif ($type === 'string') {
+                        $property = array(
                             'type' => 'multi_field',
                             'fields' => array(
                                 $key => array(
-                                    'type' => $type,
-                                    'boost' => $weight > 0 ? $weight : 1,
+                                    'type' => 'string',
+                                    'boost' => $weight,
                                 ),
                                 'untouched' => array(
-                                    'type' => $type,
+                                    'type' => 'string',
                                     'index' => 'not_analyzed',
                                 ),
                             ),
                         );
                         foreach (array_keys($indexSettings['analysis']['analyzer']) as $analyzer) {
-                            $properties[$key]['fields'][$analyzer] = array(
+                            $property['fields'][$analyzer] = array(
                                 'type' => 'string',
                                 'analyzer' => $analyzer,
-                                'boost' => $attribute->getSearchWeight(),
+                                'boost' => $weight,
                             );
                         }
+                        $properties[$key] = $property;
+                        
+                    } else {
+                        $properties[$key] = array(
+                            'type' => $type,
+                        );
                     }
                 }
             }
@@ -621,6 +677,8 @@ class Bubble_Search_Model_Resource_Engine_Elasticsearch_Client extends Elastica\
      */
     protected function _getSearchFields($onlyFuzzy = false, $q = '')
     {
+        $isSearchOnOptionsEnabled = $this->_getHelper()->shouldSearchOnOptions();
+        
         $properties = $this->_getIndexProperties();
         $fields = array();
         foreach ($properties as $key => $property) {
@@ -649,14 +707,17 @@ class Bubble_Search_Model_Resource_Engine_Elasticsearch_Client extends Elastica\
                         $fields[] = $key . '.' . $field;
                     }
                 }
+            } elseif ($property['type'] == 'object') {
+                if ($isSearchOnOptionsEnabled) {
+                    $fields[] = $key . '.label';
+                }
             } elseif (0 !== strpos($key, 'sort_by_')) {
                 $fields[] = $key;
             }
         }
-
-        if ($this->_getHelper()->shouldSearchOnOptions()) {
-            // Search on options labels too
-            $fields[] = '_options';
+        
+        if ($this->_getHelper()->isSearchOnCategoriesEnabled()) {
+            $fields[] = 'category_names';
         }
 
         return $fields;
@@ -689,8 +750,10 @@ class Bubble_Search_Model_Resource_Engine_Elasticsearch_Client extends Elastica\
             if (!$index->exists()) {
                 $indexSettings['number_of_shards'] = (int) $this->getConfig('number_of_shards');
                 $index->create($indexSettings);
-            } else {
+            } elseif ($this->_shouldReconfigureIndex()) {
+                $index->close();
                 $index->setSettings($indexSettings);
+                $index->open();
             }
             $mapping = new Elastica\Type\Mapping();
             $mapping->setType($index->getType('product'));
@@ -702,5 +765,10 @@ class Bubble_Search_Model_Resource_Engine_Elasticsearch_Client extends Elastica\
         }
 
         return $this;
+    }
+    
+    protected function _shouldReconfigureIndex()
+    {
+        return false;
     }
 }

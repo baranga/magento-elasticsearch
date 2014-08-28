@@ -13,7 +13,14 @@
             "homepage": "https://github.com/baranga"
         }
     ],
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "git@github.com:ruflin/Elastica.git"
+        }
+    ],
     "require": {
-        "magento-hackathon/magento-composer-installer": "*"
+        "magento-hackathon/magento-composer-installer": "*",
+        "ruflin/elastica": "~1.3.0"
     }
 }

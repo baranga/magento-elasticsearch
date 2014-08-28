@@ -1,39 +1,35 @@
-## Magento extension for boosting search results using Elasticsearch (0.20.x only)
+Elasticsearch Powered Magento Fulltext Search
+================================================================================
+This is a fork of https://github.com/jreinke/magento-elasticsearch.
+Unfortunatley [jreinke](https://github.com/jreinke) stoped development on this.
 
-For the latest version of Elasticsearch (0.90.x based on Lucene 4), there is a paid extension available [here](http://shop.bubblecode.net/magento-elasticsearch.html)
+The module is based on [Elastica](https://github.com/ruflin/Elastica) 1.3 and
+should support Elasticsearch 1.3.
 
-[![Build Status](https://secure.travis-ci.org/jreinke/magento-elasticsearch.png?branch=master)](http://travis-ci.org/jreinke/magento-elasticsearch)
+As improvements it includes search by option attributes and category names.
+Search by option attributes adds dropdown values to the search index so you can
+search for the same values as you see in filteres (e.g. color "red"). Search
+by category names is disabled by default but I found it very handy if somebody
+enters a category name you will see all products in that category (e.g.
+"chairs").
 
-![Magento Elasticsearch](http://i.imgur.com/X6quR.png)
 
-## Installation
+Installation
+--------------------------------------------------------------------------------
+Just plain composer install for magento. Additionally it needs a mage module for
+including composer autoloading. That's not included in composer requirements to
+leave the choice to you. I recommend
+[firegento/psr0autoloader](https://github.com/magento-hackathon/Magento-PSR-0-Autoloader).
 
-### Magento CE 1.7+ only
 
-Install with [modgit](https://github.com/jreinke/modgit):
-
-    $ cd /path/to/magento
-    $ modgit init
-    $ modgit clone elasticsearch https://github.com/jreinke/magento-elasticsearch.git
-
-Install with [modman](https://github.com/colinmollenhour/modman):
-
-    $ cd /path/to/magento
-    $ modman init
-    $ modman clone https://github.com/jreinke/magento-elasticsearch.git
-
-or download package manually:
-
-* Download latest version [here](https://github.com/jreinke/magento-elasticsearch/archive/master.zip)
-* Unzip in Magento root folder
-* Clean cache
-
-## Usage
+Usage
+--------------------------------------------------------------------------------
 
 * Go to System > Configuration > Catalog > Catalog Search
 * Select Elasticsearch search engine
 * Configure server connection parameters
 * Specify index name (default is magento)
+* Optionally enable search by category names
 * Optionally defines your custom search parameters
 * Optionally boost some product attributes in Catalog > Attributes > Manage Attributes
 * Reindex catalog search index

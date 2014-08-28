@@ -98,6 +98,7 @@
         <catalog>
             <search>
                 <elasticsearch_enable_debug_mode>0</elasticsearch_enable_debug_mode>
+                <elasticsearch_enable_logging>0</elasticsearch_enable_logging>
                 <elasticsearch_servers>127.0.0.1:9200</elasticsearch_servers>
                 <elasticsearch_timeout>30</elasticsearch_timeout>
                 <elasticsearch_index>magento</elasticsearch_index>
@@ -105,12 +106,14 @@
                 <elasticsearch_number_of_replicas>0</elasticsearch_number_of_replicas>
                 <elasticsearch_facets_max_size>50</elasticsearch_facets_max_size>
                 <elasticsearch_enable_options_search>1</elasticsearch_enable_options_search>
+                <elasticsearch_enable_category_search>0</elasticsearch_enable_category_search>
                 <elasticsearch_enable_icu_folding>0</elasticsearch_enable_icu_folding>
                 <elasticsearch_enable_fuzzy_query>1</elasticsearch_enable_fuzzy_query>
                 <elasticsearch_fuzzy_min_similarity>0.7</elasticsearch_fuzzy_min_similarity>
                 <elasticsearch_fuzzy_prefix_length>0</elasticsearch_fuzzy_prefix_length>
                 <elasticsearch_fuzzy_max_query_terms>10</elasticsearch_fuzzy_max_query_terms>
                 <elasticsearch_fuzzy_query_boost>1.0</elasticsearch_fuzzy_query_boost>
+                <elasticsearch_min_score>0</elasticsearch_min_score>
             </search>
         </catalog>
     </default>

@@ -49,7 +49,11 @@ class Bubble_Search_Helper_Data extends Mage_Core_Helper_Abstract
         'datetime',
         'decimal',
     );
-
+    
+    protected $nonTextSourceModels = array(
+        'tax/class_source_product'
+    );
+    
     /**
      * Returns attribute field name (localized if needed).
      *
@@ -57,7 +61,7 @@ class Bubble_Search_Helper_Data extends Mage_Core_Helper_Abstract
      * @param string $localeCode
      * @return string
      */
-    public function getAttributeFieldName($attribute, $localeCode = null)
+    public function getAttributeFieldName($attribute, $localeCode = null, $property = null)
     {
         if (is_string($attribute)) {
             $this->getSearchableAttributes(); // populate searchable attributes if not already set
@@ -68,8 +72,16 @@ class Bubble_Search_Helper_Data extends Mage_Core_Helper_Abstract
         }
         $attributeCode = $attribute->getAttributeCode();
         $backendType = $attribute->getBackendType();
-
-        if ($attributeCode != 'score' && in_array($backendType, $this->_textFieldTypes)) {
+        
+        if ($this->isAttributeUsingIndexableSource($attribute)) {
+            if ($property !== null) {
+                $attributeCode = sprintf(
+                    '%s.%s',
+                    $attributeCode,
+                    $property
+                );
+            }
+        } elseif ($attributeCode != 'score' && in_array($backendType, $this->_textFieldTypes)) {
             if (null === $localeCode) {
                 $localeCode = $this->getLocaleCode();
             }
@@ -243,7 +255,7 @@ class Bubble_Search_Helper_Data extends Mage_Core_Helper_Abstract
      * @param mixed $value
      * @return array
      */
-    public function getSearchParam($attribute, $value)
+    public function getSearchParam($attribute, $value, $textValue = false)
     {
         if (empty($value) ||
             (isset($value['from']) && empty($value['from']) &&
@@ -251,7 +263,7 @@ class Bubble_Search_Helper_Data extends Mage_Core_Helper_Abstract
             return false;
         }
 
-        $field = $this->getAttributeFieldName($attribute);
+        $field = $this->getAttributeFieldName($attribute, null, $textValue ? 'label' : 'value');
         $backendType = $attribute->getBackendType();
         if ($backendType == 'datetime') {
             $format = Mage::app()->getLocale()->getDateFormat(Mage_Core_Model_Locale::FORMAT_TYPE_SHORT);
@@ -446,6 +458,35 @@ class Bubble_Search_Helper_Data extends Mage_Core_Helper_Abstract
                $attribute->getBackendType() == 'int' &&
                $model instanceof Mage_Eav_Model_Entity_Attribute_Source_Table;
     }
+    
+    /**
+     * Check if attribute uses as source model which provides indexable text labels.
+     * 
+     * @param Mage_Eav_Model_Attribute $attribute
+     * @return bool
+     */
+    public function isAttributeUsingIndexableSource(Mage_Eav_Model_Entity_Attribute $attribute)
+    {
+        if (!$attribute->usesSource()) {
+            return false;
+        }
+        
+        $sourceModel = $attribute->getSourceModel();
+        if (in_array($sourceModel, $this->nonTextSourceModels)) {
+            return false;
+        }
+        
+        $source = Mage::getModel($sourceModel);
+        if ($source === null ||
+            !($source instanceof Mage_Eav_Model_Entity_Attribute_Source_Interface)
+        ) {
+            return false;
+        }
+        
+        // maybe check the labels?
+        
+        return true;
+    }
 
     /**
      * Checks if debug mode is enabled.
@@ -480,5 +521,19 @@ class Bubble_Search_Helper_Data extends Mage_Core_Helper_Abstract
     {
         echo Mage::app()->getLayout()->createBlock('core/messages')
             ->addError($error)->getGroupedHtml();
+    }
+    
+    public function isLoggingEnabled()
+    {
+        $config = $this->getEngineConfigData();
+        return isset($config['enable_logging']) ? $config['enable_logging'] : false;
+    }
+    
+    public function log($message, $level)
+    {
+        if ($this->isLoggingEnabled()) {
+            Mage::log($message, $level, 'bubble_search.log');
+        }
+        return $this;
     }
 }
