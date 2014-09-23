@@ -360,7 +360,7 @@ class Bubble_Search_Helper_Data extends Mage_Core_Helper_Abstract
             // French
             'fr' => array('fr_CA', 'fr_FR'),
             // German
-            'de' => array('de_DE','de_DE','de_AT'),
+            'de' => array('de_AT', 'de_BE', 'de_CH', 'de_DE', 'de_LI', 'de_LU'),
             // Hungarian
             'hu' => 'hu_HU',
             // Italian
