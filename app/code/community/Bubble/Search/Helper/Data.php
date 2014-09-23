@@ -476,7 +476,7 @@ class Bubble_Search_Helper_Data extends Mage_Core_Helper_Abstract
             return false;
         }
         
-        $source = Mage::getModel($sourceModel);
+        $source = $attribute->getSource();
         if ($source === null ||
             !($source instanceof Mage_Eav_Model_Entity_Attribute_Source_Interface)
         ) {
